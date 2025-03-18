@@ -72,7 +72,7 @@ function love.update(dt)
   
   -- FOE AI
   for i, foe in ipairs(foes) do
-    print((player.x - foe.x) / math.abs(player.x - foe.x))
+    -- Convert the difference into either 1 or -1, then apply actor speed to make them grow closer to player
     foe.x = foe.x + ((player.x - foe.x) / math.abs(player.x - foe.x)) * foe.speed * dt
     foe.y = foe.y + ((player.y - foe.y) / math.abs(player.y - foe.y)) * foe.speed * dt
   end
