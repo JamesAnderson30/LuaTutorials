@@ -4,16 +4,16 @@ function love.load()
   nextLevel = 1
   
   foes = {}
-  table.insert(foes, makeFoe('line', 100, 10, 100, 0, 0, 100, 100))
+  table.insert(foes, makeBasicFoe('line', 100, 10, 50, 0, 0, 50, 50, 200))
   
   levels = {}
   --level1 = 
   table.insert(levels, "Test")
-  player = makePlayer(125, 'fill', 300, 250, 200, 100)
+  player = makePlayer(100, 125, 'fill', 300, 250, 50, 50)
 end
 
 
-function makeFoe(kind, hp, dmg, speed, x, y, w, h)
+function makeBasicFoe(kind, hp, dmg, speed, x, y, w, h, cooldown)
   rect = {}
   rect.kind = kind
   rect.hp = hp
@@ -23,17 +23,36 @@ function makeFoe(kind, hp, dmg, speed, x, y, w, h)
   rect.y = y
   rect.w = w
   rect.h = h
+  rect.lastHit = 0
+  rect.cooldown = cooldown / 1000
+  rect.ai = function(foe, player, dt)
+      if(player.x - foe.x ~= 0) then
+        foe.x = foe.x + ((player.x - foe.x) / math.abs(player.x - foe.x)) * foe.speed * dt
+      end
+      if (player.y - foe.y) then
+        foe.y = foe.y + ((player.y - foe.y) / math.abs(player.y - foe.y)) * foe.speed * dt
+      end
+  end
   return rect
 end
 
-function makePlayer(speed,kind, x, y, w, h)
+function makePlayer(hp,speed,kind, x, y, w, h)
   rect = {}
+  rect.alive = true
+  rect.hp = hp
   rect.speed = speed
   rect.kind = kind
   rect.x = x
   rect.y = y
   rect.w = w
   rect.h = h
+  rect.hitBy = function(hitter)
+    print(love.timer.getTime() - hitter.lastHit)
+    if (hitter.cooldown < love.timer.getTime() - hitter.lastHit) then
+      rect.hp = rect.hp - hitter.dmg
+      hitter.lastHit = love.timer.getTime()
+    end
+  end
   return rect
 end
 
@@ -41,6 +60,12 @@ function drawRect(rect)
   love.graphics.rectangle(rect.kind, rect.x, rect.y, rect.w, rect.h)
 end
 
+function CheckCollision(thing1, thing2)
+  return thing1.x < thing2.x + thing2.w and
+         thing2.x < thing1.x + thing1.w and
+         thing1.y < thing2.y + thing2.h and
+         thing2.y < thing1.y + thing1.h
+end
 
 
 function love.update(dt)
@@ -72,11 +97,30 @@ function love.update(dt)
   
   -- FOE AI
   for i, foe in ipairs(foes) do
-    -- Convert the difference into either 1 or -1, then apply actor speed to make them grow closer to player
-    foe.x = foe.x + ((player.x - foe.x) / math.abs(player.x - foe.x)) * foe.speed * dt
-    foe.y = foe.y + ((player.y - foe.y) / math.abs(player.y - foe.y)) * foe.speed * dt
+    foe.ai(foe, player, dt)
+    
   end
+  --
+  
+  --
+  
+  -- CHECK COLLISON
+  for i, foe in ipairs(foes) do
+    if CheckCollision(foe, player) then
+      player.hitBy(foe)
+      if player.hp <= 0 then
+        player.alive = false
+      end
+    end
+  end
+  
 end
+
+
+
+-------------------
+
+
 
 function love.draw()
   --DRAW FOES
@@ -88,8 +132,13 @@ function love.draw()
   --
   
   --DRAW PLAYER  
-  drawRect(player)
+  if player.alive == true then
+    drawRect(player)
+    love.graphics.print(player.hp)
+  else
+    love.graphics.print("DEAD")
+  end
   --END DRAW PLAYERa
+  
+  
 end
-
-
