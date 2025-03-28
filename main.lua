@@ -31,6 +31,11 @@ function love.update(dt)
   
   --
   
+  -- CHECK LEVEL TIMER
+  Level.checkTimer()
+  
+  --
+  
   -- PLAYER CONTROLS
   if player.alive then
     if love.keyboard.isDown("space") then
@@ -39,18 +44,28 @@ function love.update(dt)
     
     if love.keyboard.isDown('w') then
       player.y = player.y - player.speed * dt
+      player.direction = "up"
     end
     
     if love.keyboard.isDown('s') then
       player.y = player.y + player.speed * dt
+      player.direction = "down"
     end
     
     if love.keyboard.isDown('a') then
       player.x = player.x - player.speed * dt
+      player.direction = "left"
     end
     
     if love.keyboard.isDown('d') then
       player.x = player.x + player.speed * dt
+      player.direction = "right"
+    end
+    
+    function love.keypressed(key, scancode, isrepeat)
+      if key == "p" then
+        Level.advance()
+      end
     end
   end
   -- END PLAYER CONTROLS
@@ -101,7 +116,7 @@ function love.update(dt)
       if Collision.CheckCollision(foe, bullet) then
         foe.handleBeingShot(foe, bullet)
         Collision.handleKnockBack(foe, bullet)
-        bullet.vanish()
+        bullet.vanish(k)
         if foe.isAlive == false then
           table.remove(Level.Foes, i)
         end
@@ -131,7 +146,7 @@ function love.draw()
   
   --DRAW PLAYER  
   if player.alive == true then
-    drawRect(player)
+    player.draw(player)
     love.graphics.print(player.hp)
   else
     love.graphics.print("DEAD")
@@ -141,8 +156,10 @@ function love.draw()
   --
   
   --DRAW BULLETS
-  for i,v in ipairs(Bullet.bullets) do
-    love.graphics.rectangle(v.kind, v.x, v.y, v.short, v.long)
+  for i,bullet in ipairs(Bullet.bullets) do
+    --love.graphics.rectangle(v.kind, v.x, v.y, v.short, v.long)
+    bullet.draw(bullet)
+    
   end
   
   
