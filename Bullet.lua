@@ -9,10 +9,26 @@ function fly(bullet)
   if bullet.direction == "up" then
     bullet.y = bullet.y - bullet.speed
   end
+  
+  if bullet.direction == "down" then
+    bullet.y = bullet.y + bullet.speed
+  end
+  
+  if bullet.direction == "right" then
+    bullet.x = bullet.x + bullet.speed
+  end
+  
+  if bullet.direction == "left" then
+    bullet.x = bullet.x - bullet.speed
+  end
 end
 
-function vanish(bullet)
-  table.remove(Bullet.bullets, bullet)
+function vanish(bulletId)
+  table.remove(Bullet.bullets, bulletId)
+end
+
+local function draw(bullet)
+  love.graphics.rectangle(bullet.kind, bullet.x, bullet.y, bullet.w, bullet.h)
 end
 
 function Bullet.makeBasicBullet(x, y, direction)
@@ -22,17 +38,21 @@ function Bullet.makeBasicBullet(x, y, direction)
   bullet.x = x
   bullet.y = y
   bullet.speed = 10
-  bullet.dmg = 5
+  bullet.dmg = 20
   bullet.short = 10
   bullet.long = 25
   bullet.knockback = 0.1
-  if(direction == "up" or direction == "down") then
+  bullet.draw = draw
+  if(bullet.direction == "up" or bullet.direction == "down") then
+    printMe2 = "up or down"
     bullet.w = bullet.short
     bullet.h = bullet.long
   else 
+    printMe2 = "left or right"
     bullet.w = bullet.long
     bullet.h = bullet.short
   end
+  printMe3 = bullet.w
   bullet.fly = fly
   bullet.vanish = vanish
   return bullet
