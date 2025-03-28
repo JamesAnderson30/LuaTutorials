@@ -12,8 +12,13 @@ function hitBy(hitter)
     end
   end
 
+
 function shoot(player)
-  table.insert(Bullet.bullets, Bullet.makeBasicBullet(player.x + (player.w / 2), player.y + (player.h / 2), "up"))
+  --Check Cooldown
+  if(player.cooldown < love.timer.getTime() - player.lastShot) then
+    table.insert(Bullet.bullets, Bullet.makeBasicBullet(player.x + (player.w / 2), player.y + (player.h / 2), "up"))
+    player.lastShot = love.timer.getTime()
+  end
 end
 
 function playerMaker.makePlayer(x, y, w, h)
@@ -29,6 +34,8 @@ function playerMaker.makePlayer(x, y, w, h)
   rect.h = h
   rect.weapon = "basic"
   rect.shoot = shoot
+  rect.lastShot = 0
+  rect.cooldown = 200 / 1000 -- divide by a thousand to measure in milliseconds, my preference
   rect.hitBy = hitBy
   return rect
 end
