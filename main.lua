@@ -92,6 +92,23 @@ function love.update(dt)
   
   -- CHECK FOE ON FOE COLLISION
   
+  ---
+  
+  -- CHECK FOE ON BULLET COLLISON
+  
+  for i, foe in ipairs(Level.Foes) do
+    for k, bullet in ipairs(Bullet.bullets) do
+      if Collision.CheckCollision(foe, bullet) then
+        foe.handleBeingShot(foe, bullet)
+        Collision.handleKnockBack(foe, bullet)
+        bullet.vanish()
+        if foe.isAlive == false then
+          table.remove(Level.Foes, i)
+        end
+      end
+    end
+  end
+  
 end
 
 -------------------
