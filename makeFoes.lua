@@ -8,11 +8,19 @@ function basicAi(foe, player, dt)
       foe.y = foe.y + ((player.y - foe.y) / math.abs(player.y - foe.y)) * foe.speed * dt
     end
   end
+  
+function handleBeingShot(foe, bullet)
+  foe.hp = foe.hp - bullet.dmg
+  if foe.hp <= 0 then
+    foe.isAlive = false
+  end
+end
 
 function foeMakers.makeBasicFoe(x, y, w, h)
   foe = {}
   foe.kind = 'line'
   foe.hp = 100
+  foe.isAlive = true
   foe.dmg = 10
   foe.speed = 50
   foe.x = x
@@ -23,6 +31,7 @@ function foeMakers.makeBasicFoe(x, y, w, h)
   foe.cooldown = 200 / 1000
   foe.knockback = 0.5
   foe.isColliding = false
+  foe.handleBeingShot = handleBeingShot
   foe.ai = basicAi
   return foe
 end
