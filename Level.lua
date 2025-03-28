@@ -11,13 +11,11 @@ local levelNum = 0
 
 
 function Level.advance()
-  printMe1 = "advance"
   levelNum = levelNum + 1
   currentLevel = levels[levelNum]
   for k, foe in pairs(currentLevel.onLoad) do
     table.insert(Level.Foes, foe())
   end
-  
 end
 
 levels[1] = {
