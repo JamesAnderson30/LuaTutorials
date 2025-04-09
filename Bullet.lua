@@ -44,15 +44,12 @@ function Bullet.makeBasicBullet(x, y, direction)
   bullet.knockback = 0.1
   bullet.draw = draw
   if(bullet.direction == "up" or bullet.direction == "down") then
-    printMe2 = "up or down"
     bullet.w = bullet.short
     bullet.h = bullet.long
   else 
-    printMe2 = "left or right"
     bullet.w = bullet.long
     bullet.h = bullet.short
   end
-  printMe3 = bullet.w
   bullet.fly = fly
   bullet.vanish = vanish
   return bullet
