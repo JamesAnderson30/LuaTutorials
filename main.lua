@@ -5,11 +5,13 @@ printMe2 = "nothing"
 printMe3 = "nothing"
 printMe4 = "nothing"
 
-local FoeMaker = require("makeFoes")
-local PlayerMaker = require("makePlayers")
-local Collision = require("Collision")
-local Level = require("Level")
-local Bullet = require("Bullet")
+FoeMaker = require("makeFoes")
+PlayerMaker = require("makePlayers")
+Collision = require("Collision")
+Level = require("Level")
+Bullet = require("Bullet")
+
+local tickCount = 0
 
 
 function love.load()
@@ -25,6 +27,7 @@ end
 
 
 function love.update(dt)
+  tickCount = tickCount + 1
   -- CHECK IF NEW LEVEL
 
   -- END NEW LEVEL
@@ -35,6 +38,11 @@ function love.update(dt)
   Level.checkTimer()
   
   --
+  -- CHECK LEVEL EVENTS every other frame
+
+  if tickCount % 2 == 1 then
+    Level.checkEvents()
+  end
   
   -- PLAYER CONTROLS
   if player.alive then
@@ -124,6 +132,9 @@ function love.update(dt)
     end
   end
   
+  -- CHECK LEVEL COMPLETION
+  Level.checkLevelCompletion()
+  
 end
 
 -------------------
@@ -138,7 +149,8 @@ function love.draw()
   love.graphics.print(printMe4, 50, 75)
   --DRAW FOES
   for i,v in ipairs(Level.Foes) do
-    love.graphics.rectangle(v.kind, v.x, v.y, v.w, v.h)
+    v.draw(v)
+    --love.graphics.rectangle(v.kind, v.x, v.y, v.w, v.h)
   end
   --END DRAW FOES
   
