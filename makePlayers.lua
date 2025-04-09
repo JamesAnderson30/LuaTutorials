@@ -2,6 +2,7 @@ local playerMaker = {}
 local Collision = require("collision")
 local Bullet = require("Bullet")
 
+
 function hitBy(hitter)
     if (hitter.cooldown < love.timer.getTime() - hitter.lastHit) then
       player.hp = player.hp - hitter.dmg
