@@ -1,174 +1,149 @@
+local Level = {}
 
--- Debuggers :)
-printMe1 = "nothing"
-printMe2 = "nothing"
-printMe3 = "nothing"
-printMe4 = "nothing"
+local levels = {}
 
-FoeMaker = require("makeFoes")
-PlayerMaker = require("makePlayers")
-Collision = require("Collision")
-Level = require("Level")
-Bullet = require("Bullet")
+local startTime = 0
 
-local tickCount = 0
+Level.defeated = 0
+
+Level.Foes = {}
 
 
-function love.load()
-  Level.advance()
-  player = PlayerMaker.makePlayer(300, 250, 50, 50)
-end
+Level.levelNum = 0
 
-function drawRect(rect)
-  love.graphics.rectangle(rect.kind, rect.x, rect.y, rect.w, rect.h)
-end
-
-
-
-
-function love.update(dt)
-  tickCount = tickCount + 1
-  -- CHECK IF NEW LEVEL
-
-  -- END NEW LEVEL
+function Level.checkTimer()
   
-  --
+  local levelTime = math.floor(love.timer.getTime() - Level.startTime)
+  local FoeTimeTable = currentLevel.onTime[levelTime]
   
-  -- CHECK LEVEL TIMER
-  Level.checkTimer()
-  
-  --
-  -- CHECK LEVEL EVENTS every other frame
-  printMe1 = tickCount % 2
-  if tickCount % 2 == 1 then
-    Level.checkEvents()
-  end
-  
-  -- PLAYER CONTROLS
-  if player.alive then
-    if love.keyboard.isDown("space") then
-      player.shoot(player)
-    end 
-    
-    if love.keyboard.isDown('w') then
-      player.y = player.y - player.speed * dt
-      player.direction = "up"
-    end
-    
-    if love.keyboard.isDown('s') then
-      player.y = player.y + player.speed * dt
-      player.direction = "down"
-    end
-    
-    if love.keyboard.isDown('a') then
-      player.x = player.x - player.speed * dt
-      player.direction = "left"
-    end
-    
-    if love.keyboard.isDown('d') then
-      player.x = player.x + player.speed * dt
-      player.direction = "right"
-    end
-    
-    function love.keypressed(key, scancode, isrepeat)
-      if key == "p" then
-        Level.advance()
+  if FoeTimeTable ~= nil then
+    for i, foe in pairs(FoeTimeTable) do
+      if(type(foe) == 'function') and FoeTimeTable.fired == false then
+        table.insert(Level.Foes, foe())
       end
     end
+    FoeTimeTable.fired = true
+    --FoeTimeTable.fired = true
   end
-  -- END PLAYER CONTROLS
-  
-  --
-  
-  -- FOE AI
-  for i, foe in ipairs(Level.Foes) do
-    if foe.isColliding == false then
-      foe.ai(foe, player, dt)
-    end
-  end
-  --
-  
-  --
-  
-  -- BULLET AI
-  for i, bullet in ipairs(Bullet.bullets) do
-    bullet.fly(bullet)
-  end
-  --
-  
-  -- CHECK FOE AGAINST PLAYER COLLISON
-  for i, foe in ipairs(Level.Foes) do
-    if Collision.CheckCollision(foe, player) then
-      foe.isColliding = true
-      if player.alive == true then
-        player.hitBy(foe)
-      end
-      if player.hp <= 0 then
-        player.alive = false
-      end
-    else
-      foe.isColliding = false
-    end
-  end
-  
-  ----
-  
-  -- CHECK FOE ON FOE COLLISION
-  
-  ---
-  
-  -- CHECK FOE ON BULLET COLLISON
-  
-  for i, foe in ipairs(Level.Foes) do
-    for k, bullet in ipairs(Bullet.bullets) do
-      if Collision.CheckCollision(foe, bullet) then
-        foe.handleBeingShot(foe, bullet)
-        Collision.handleKnockBack(foe, bullet)
-        bullet.vanish(k)
-        if foe.isAlive == false then
-          table.remove(Level.Foes, i)
-        end
-      end
-    end
-  end
-  
 end
 
--------------------
-
-
-
-function love.draw()
-  -- For debugging :)
-  love.graphics.print(printMe1, 50)
-  love.graphics.print(printMe2, 50, 25)
-  love.graphics.print(printMe3, 50, 50)
-  love.graphics.print(printMe4, 50, 75)
-  --DRAW FOES
-  for i,v in ipairs(Level.Foes) do
-    love.graphics.rectangle(v.kind, v.x, v.y, v.w, v.h)
+function Level.checkEvents()
+  for k, event in pairs(currentLevel.events) do
+    --printMe4 = tostring(event.func())
+    if event.func(event.triggered) then
+      event.triggered = true
+    end
   end
-  --END DRAW FOES
-  
-  --
-  
-  --DRAW PLAYER  
-  if player.alive == true then
-    player.draw(player)
-    love.graphics.print(player.hp)
-  else
-    love.graphics.print("DEAD")
+end
+
+function Level.checkLevelCompletion()
+  if(currentLevel.maxSpawnTime < love.timer.getTime() - Level.startTime and Level.defeated >= currentLevel.defeatedGoal) then
+    Level.advance()
   end
-  --END DRAW PLAYERa
+end
+
+function Level.advance()
+  -- Increment level number
+  Level.levelNum = Level.levelNum + 1
   
-  --
+  -- Load next level
+  currentLevel = levels[Level.levelNum]
   
-  --DRAW BULLETS
-  for i,bullet in ipairs(Bullet.bullets) do
-    --love.graphics.rectangle(v.kind, v.x, v.y, v.short, v.long)
-    bullet.draw(bullet)
+  -- Reset level timer
+  Level.startTime = love.timer.getTime()
+  
+  Level.defeated = 0
+
+  -- Load starting foes
+  for k, foe in pairs(currentLevel.onLoad) do
+    table.insert(Level.Foes, foe())
+  end
+end
+
+-- HOW LEVEL SPAWNING WORKS
+-- There are three options to spawn foes on levels:
+-- onLoad, a list of functions that will execute immediately and only once to spawn foes. Just return the foe you want to make
+--
+-- onTime, a list of functions that will execute when a certain time has passed. The table index of onTime repersents the 'second' that you want the list of functions to execute. Each function should return the foe you want to spawn
+--
+-- onEvents, a list of functions that will execute every other frame. each event must have a parameter called 'triggered' to work properly, each even must also have a 'func' parameter. This is what will fire. You may test conditions and spawn enemies. When you want the event to stop triggering, return 'true'. If you do not return 'true' the event will trigger endlessly. That said, if you want the event to keep firing, return 'false'
+
+levels[1] = {
+  maxSpawnTime = 4,
+  defeatedGoal = 5,
+  onLoad = {
+    function() return FoeMaker.makeBasicFoe(500, 0, 50, 50) end,
+    function() return FoeMaker.makeBasicFoe(200, 500, 50, 50) end
+  },
+  onTime = {
     
-  end
-  
-  
-end
+    [3] = {
+      fired = false,
+      function() return FoeMaker.makeBasicFoe(100, 50, 50, 50) end
+    },
+    [5] = {
+      fired = false,
+      function() return FoeMaker.makeBasicFoe(200, 500, 50, 50) end,
+      function() return FoeMaker.makeBasicFoe(200, 600, 50, 50) end
+    }
+  },
+  events = {
+    --Test Event
+    ["whenDefeated"] = {
+      triggered = false, 
+      func = function(triggered) 
+        if(Level.defeated > 2 and triggered == false) then
+          table.insert(Level.Foes, FoeMaker.makeBasicFoe(600, 0, 50, 50))
+          return true
+        else
+          return false
+        end        
+      end
+    }
+  }
+}
+
+levels[2] = {
+  --Make sure to set maxSpawnTime to the latest timed spawn
+  --Make sure to set defeated goal
+  maxSpawnTime = 4,
+  defeatedGoal = 5,
+  onLoad = {
+    function() return FoeMaker.makeBasicFoe(500, 0, 50, 50) end,
+    function() return FoeMaker.makeBasicFoe(200, 500, 50, 50) end
+  },
+  onTime = {
+    
+    [1] = {
+      fired = false,
+      function() return FoeMaker.makeFastFoe(100, 50, 50, 50) end,
+    },
+    [2] = {
+      fired = false,
+      function() return FoeMaker.makeFastFoe(600, 100, 50, 50) end,
+    },
+    [3] = {
+      fired = false,
+      function() return FoeMaker.makeFastFoe(200, 300, 25, 25) end,
+    },
+    [4] = {
+      function() return FoeMaker.makeBasicFoe(500, 0, 50, 50) end,
+      function() return FoeMaker.makeBasicFoe(200, 500, 50, 50) end
+    }
+  },
+  events = {
+    ["whenDefeated"] = {
+      triggered = false, 
+      func = function(triggered) 
+        if(Level.defeated > 1 and triggered == false) then
+          table.insert(Level.Foes, FoeMaker.makeFastFoe(600, 0, 50, 50))
+          return true
+        else
+          return false
+        end        
+      end
+    }
+  }
+}
+
+return Level
