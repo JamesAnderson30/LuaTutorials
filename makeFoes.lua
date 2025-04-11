@@ -16,13 +16,20 @@ local function handleBeingShot(foe, bullet)
   foe.hp = foe.hp - bullet.dmg
   if foe.hp <= 0 then
     foe.isAlive = false
-    Level.defeated = Level.defeated + 1    
+    Level.removeFoe(foe)
   end
 end
 
+
+
 local function draw(v)
+  love.graphics.setColor(v.color.red, v.color.green, v.color.blue)
   love.graphics.rectangle(v.kind, v.x, v.y, v.w, v.h)
-  love.graphics.print(v.hp, v.hpX, v.hpY)
+  local font = love.graphics.getFont()
+  local hpText = love.graphics.newText(font, v.hp)
+  love.graphics.draw(hpText, (v.hpX - (hpText:getWidth() / 2)), (v.hpY - (hpText:getHeight() / 2)))
+  love.graphics.setColor(256,256,256)
+
 end
 
 function foeMakers.makeBasicFoe(x, y, w, h)
@@ -32,6 +39,11 @@ function foeMakers.makeBasicFoe(x, y, w, h)
   foe.isAlive = true
   foe.dmg = 10
   foe.speed = 50
+  foe.color = {
+      red= 256,
+      green= 256,
+      blue= 256
+    }
   foe.x = x
   foe.y = y
   foe.w = w
@@ -56,6 +68,11 @@ function foeMakers.makeFastFoe(x, y, w, h)
   foe.isAlive = true
   foe.dmg = 15
   foe.speed = 90
+    foe.color = {
+      red= 256,
+      green= 256,
+      blue= 0
+    }
   foe.x = x
   foe.y = y
   foe.w = w
