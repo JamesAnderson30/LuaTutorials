@@ -4,28 +4,76 @@ local levels = {}
 
 local startTime = 0
 
+local delayTime = 5
+
 Level.defeated = 0
 
 Level.Foes = {}
 
+Level.foeCount = 0
+
+Level.inTransition = 0
 
 Level.levelNum = 0
 
-function Level.checkTimer()
+--  LOAD LEVEL (no transition)
+function Level.start(level)
+  Level.levelNum = level
   
+  -- Load next level
+  currentLevel = levels[Level.levelNum]
+  
+  -- Reset level timer
+  Level.startTime = love.timer.getTime()
+  
+  Level.defeated = 0
+  
+  -- Load starting foes
+  for k, foe in pairs(currentLevel.onLoad) do
+    Level.addFoe(foe)
+  end
+end
+
+-- Handle Transitions
+
+  
+
+
+-- TRACK FOES
+
+function Level.addFoe(foe)
+  if type(foe) == 'table' then
+    table.insert(Level.Foes, foe)
+  else
+    table.insert(Level.Foes, foe())
+  end
+  Level.foeCount = Level.foeCount + 1
+end
+  
+function Level.removeFoe(foe)
+  Level.foeCount = Level.foeCount - 1
+  Level.defeated = Level.defeated + 1
+end
+
+-- CHECK SPAWN TIMER
+
+function Level.checkTimer()
+  printMe1 = Level.foeCount
   local levelTime = math.floor(love.timer.getTime() - Level.startTime)
   local FoeTimeTable = currentLevel.onTime[levelTime]
   
   if FoeTimeTable ~= nil then
     for i, foe in pairs(FoeTimeTable) do
       if(type(foe) == 'function') and FoeTimeTable.fired == false then
-        table.insert(Level.Foes, foe())
+        Level.addFoe(foe)
       end
     end
     FoeTimeTable.fired = true
     --FoeTimeTable.fired = true
   end
 end
+
+-- CHECK EVENTS
 
 function Level.checkEvents()
   for k, event in pairs(currentLevel.events) do
@@ -36,27 +84,36 @@ function Level.checkEvents()
   end
 end
 
+-- CHECK AND HANDLE LEVEL COMPLETION
 function Level.checkLevelCompletion()
-  if(currentLevel.maxSpawnTime < love.timer.getTime() - Level.startTime and Level.defeated >= currentLevel.defeatedGoal) then
+  if(currentLevel.maxSpawnTime < love.timer.getTime() - Level.startTime 
+    and Level.foeCount <= 0 
+    and Level.defeated >= currentLevel.defeatedGoal) 
+  then
     Level.advance()
   end
 end
 
 function Level.advance()
   -- Increment level number
+  
   Level.levelNum = Level.levelNum + 1
   
   -- Load next level
   currentLevel = levels[Level.levelNum]
   
   -- Reset level timer
-  Level.startTime = love.timer.getTime()
+  Level.startTime = love.timer.getTime() + delayTime
   
   Level.defeated = 0
+  
+  printMe2 = Level.levelNum
+  -- Execute level transition
+  Level.inTransition = true
 
   -- Load starting foes
   for k, foe in pairs(currentLevel.onLoad) do
-    table.insert(Level.Foes, foe())
+    Level.addFoe(foe)
   end
 end
 
@@ -93,7 +150,7 @@ levels[1] = {
       triggered = false, 
       func = function(triggered) 
         if(Level.defeated > 2 and triggered == false) then
-          table.insert(Level.Foes, FoeMaker.makeBasicFoe(600, 0, 50, 50))
+          Level.addFoe(FoeMaker.makeBasicFoe(600, 0, 50, 50))
           return true
         else
           return false
